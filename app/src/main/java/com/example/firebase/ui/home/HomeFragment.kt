@@ -2,6 +2,7 @@ package com.example.firebase.ui.home
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.health.connect.datatypes.ExerciseRoute.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,8 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-
 import com.example.firebase.databinding.FragmentHomeBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 class HomeFragment : Fragment() {
 
@@ -24,6 +26,8 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
     private val locationPermissionRequest:  ActivityResultLauncher<String>? = null
+    private var mLastLocation: Location? = null
+    private var mFusedLocationClient: FusedLocationProviderClient? = null
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -39,7 +43,6 @@ class HomeFragment : Fragment() {
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
-        return root
         val locationPermissionRequest =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
                 val fineLocationGranted: Boolean = permissions.getOrDefault(
@@ -57,10 +60,11 @@ class HomeFragment : Fragment() {
                         .show()
                 }
             }
-
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         fun OnClickListener() {
             getLocation()
         }
+        return root
     }
 
     private fun getLocation() {
@@ -73,7 +77,19 @@ class HomeFragment : Fragment() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ).toString())
         } else {
-            Toast.makeText(requireContext(), "getLocation: permission granted", Toast.LENGTH_SHORT).show()
+            mFusedLocationClient!!.lastLocation.addOnSuccessListener { location: android.location.Location? ->
+                if (location != null) {
+                    mLastLocation = location
+                    binding.localitzacio.text = String.format(
+                        "Latitud: %1$.4f \n Longitud: %2$.4f\n Hora: %3\$tr",
+                        mLastLocation.getLatitude(),
+                        mLastLocation.getLongitude(),
+                        mLastLocation.getTime()
+                    )
+                } else {
+                    binding.localitzacio.text = "Sense localització coneguda"
+                }
+            }
         }
     }
 
