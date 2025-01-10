@@ -2,8 +2,15 @@ package com.example.firebase.ui.home
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.health.connect.datatypes.ExerciseRoute.Location
+import android.location.Address
+import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.service.controls.ControlsProviderService.TAG
+import android.text.TextUtils
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +24,12 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.firebase.databinding.FragmentHomeBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import java.io.IOException
+import java.util.Locale
+import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
 
 class HomeFragment : Fragment() {
 
@@ -52,7 +65,7 @@ class HomeFragment : Fragment() {
                     Manifest.permission.ACCESS_COARSE_LOCATION, false
                 )
                 if (fineLocationGranted != null && fineLocationGranted) {
-                    getLocation();
+                    getLocation()
                 } else if (coarseLocationGranted != null && coarseLocationGranted) {
                     getLocation()
                 } else {
@@ -60,10 +73,6 @@ class HomeFragment : Fragment() {
                         .show()
                 }
             }
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        fun OnClickListener() {
-            getLocation()
-        }
         return root
     }
 
@@ -77,19 +86,60 @@ class HomeFragment : Fragment() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ).toString())
         } else {
-            mFusedLocationClient!!.lastLocation.addOnSuccessListener { location: android.location.Location? ->
+            mFusedLocationClient!!.lastLocation.addOnSuccessListener {
+                location ->
                 if (location != null) {
-                    mLastLocation = location
-                    binding.localitzacio.text = String.format(
-                        "Latitud: %1$.4f \n Longitud: %2$.4f\n Hora: %3\$tr",
-                        mLastLocation.getLatitude(),
-                        mLastLocation.getLongitude(),
-                        mLastLocation.getTime()
-                    )
+                    fetchAddress(location)
                 } else {
                     binding.localitzacio.text = "Sense localització coneguda"
                 }
             }
+        }
+        binding.localitzacio.setText("Carregant...")
+    }
+
+    fun fetchAddress( location: Location){
+        var executor : ExecutorService = Executors.newSingleThreadExecutor()
+        var handler : Handler = Handler(Looper.getMainLooper())
+
+        var geocoder : Geocoder = Geocoder(requireContext(), Locale.getDefault())
+        executor.execute {
+          var addresses : List<Address>? = null
+          var resultMessage: String = ""
+
+          try {
+              addresses = geocoder.getFromLocation(
+                  location.latitude,
+                  location.longitude,
+                  1
+              )
+
+              if (addresses == null || addresses.size == 0){
+                  if (resultMessage.isEmpty()) {
+                      resultMessage = "No se ha encontrado ninguna ubicacion"
+                      Log.e("INCISIVE" , resultMessage)
+                  }
+              } else {
+                  var address : Address = addresses.get(0)
+                  var addressParts : ArrayList<String>? = null
+                  for (i in 0..address.maxAddressLineIndex){
+                      addressParts?.add(address.getAddressLine(i))
+                  }
+                  resultMessage = TextUtils.join("\n", addressParts!!)
+                  var finalResultManager : String = resultMessage
+                  handler.post {
+                   binding.localitzacio.setText(String.format(
+                       "Direcció: %1$s \n Hora: %2$tr",
+                       finalResultManager, System.currentTimeMillis()))
+                  }
+              }
+          }catch (e : IOException){
+              resultMessage = "Servicio no disponible"
+              Log.e("INCISIVE", resultMessage, e)
+          } catch (e : IllegalArgumentException){
+              resultMessage = "Coordenadas no validas"
+              Log.e("INCISIVE", resultMessage + ". "+ "Latitude = "+ location.latitude + ", Longitude = "+ location.longitude, e)
+          }
         }
     }
 
@@ -98,3 +148,4 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 }
+
