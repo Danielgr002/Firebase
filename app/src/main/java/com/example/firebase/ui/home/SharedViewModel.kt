@@ -10,7 +10,9 @@ import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.firebase.databinding.FragmentHomeBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -21,6 +23,7 @@ import java.util.concurrent.Executors
 
 
 class SharedViewModel(application: Application) : AndroidViewModel(application) {
+    private var binding: FragmentHomeBinding? = null
     private val app: Application? = null
     val currentAddress: MutableLiveData<String> = MutableLiveData()
     private val checkPermission = MutableLiveData<String>()
@@ -29,6 +32,18 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
 
     private var mTrackingLocation : Boolean? = null
     var mFusedLocationClient : FusedLocationProviderClient? = null
+
+    fun getCurrentAddress() : LiveData<String> {
+        return currentAddress;
+    }
+
+    fun getButtonText(): MutableLiveData<String> {
+        return buttonText
+    }
+
+    fun getProgressBar(): MutableLiveData<Boolean> {
+        return progressBar
+    }
 
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -70,7 +85,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
             checkPermission.postValue("check");
         } else {
             mFusedLocationClient?.requestLocationUpdates(
-                    locationRequest
+                locationRequest,
                 mLocationCallback, null
             );
 
@@ -87,10 +102,9 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         val executor = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
 
-        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        val geocoder = Geocoder(app!!.applicationContext, Locale.getDefault())
 
         executor.execute {
-            // Aquest codi s'executa en segon pla
             var addresses: List<Address>? = null
             var resultMessage = ""
             try {
@@ -118,8 +132,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
                     resultMessage = TextUtils.join("\n", addressParts)
                     val finalResultMessage = resultMessage
                     handler.post {
-                        // Aquest codi s'executa en primer pla.
-                        if (mTrackingLocation) binding!!.localitzacio.text = String.format(
+                        if (mTrackingLocation!!) binding!!.localitzacio.text = String.format(
                             "Direcció: %1\$s \n Hora: %2\$tr",
                             finalResultMessage,
                             System.currentTimeMillis()

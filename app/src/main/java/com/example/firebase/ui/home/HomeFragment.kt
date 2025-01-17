@@ -36,7 +36,7 @@ class HomeFragment : Fragment() {
 
         val sharedViewModel = ViewModelProvider(requireActivity()).get(SharedViewModel::class.java)
 
-        SharedViewModel.currentAddress.observe(
+        sharedViewModel.getCurrentAddress().observe(
             viewLifecycleOwner,
             Observer<String> { address: String? ->
                 binding!!.localitzacio.text = String.format(
@@ -45,8 +45,7 @@ class HomeFragment : Fragment() {
                 )
             })
         sharedViewModel.getButtonText().observe(viewLifecycleOwner) { s ->
-            binding!!.buttonLocation.setText(
-
+            binding!!.buttonLocation.setText(s
             )
         }
         sharedViewModel.getProgressBar().observe(viewLifecycleOwner) { visible ->
