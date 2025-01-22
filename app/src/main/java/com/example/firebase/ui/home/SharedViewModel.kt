@@ -45,6 +45,14 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         return progressBar
     }
 
+    fun setFusedLocationClient(mFusedLocationClient: FusedLocationProviderClient?) {
+        this.mFusedLocationClient = mFusedLocationClient
+    }
+
+    fun getCheckPermission(): LiveData<String>{
+        return checkPermission
+    }
+
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             if (locationResult != null) {
