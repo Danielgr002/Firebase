@@ -24,13 +24,13 @@ import java.util.concurrent.Executors
 
 class SharedViewModel(application: Application) : AndroidViewModel(application) {
     private var binding: FragmentHomeBinding? = null
-    private val app: Application? = null
+    private val app: Application = application
     val currentAddress: MutableLiveData<String> = MutableLiveData()
     private val checkPermission = MutableLiveData<String>()
     private val buttonText = MutableLiveData<String>()
     private val progressBar = MutableLiveData<Boolean>()
 
-    private var mTrackingLocation : Boolean? = null
+    private var mTrackingLocation : Boolean = false
     var mFusedLocationClient : FusedLocationProviderClient? = null
 
     fun getCurrentAddress() : LiveData<String> {
@@ -71,7 +71,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
 
     fun switchTrackingLocation() {
-        if (!mTrackingLocation!!) {
+        if (!mTrackingLocation) {
             startTrackingLocation(true)
         } else {
             stopTrackingLocation()
@@ -110,15 +110,15 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         val executor = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
 
-        val geocoder = Geocoder(app!!.applicationContext, Locale.getDefault())
+        val geocoder = Geocoder(app.applicationContext, Locale.getDefault())
 
         executor.execute {
             var addresses: List<Address>? = null
             var resultMessage = ""
             try {
                 addresses = geocoder.getFromLocation(
-                    location!!.latitude,
-                    location.longitude,  // En aquest cas, sols volem una única adreça:
+                    location?.latitude!!,
+                    location?.longitude!!,
                     1
                 )
 
@@ -140,7 +140,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
                     resultMessage = TextUtils.join("\n", addressParts)
                     val finalResultMessage = resultMessage
                     handler.post {
-                        if (mTrackingLocation!!) binding!!.localitzacio.text = String.format(
+                        if (mTrackingLocation) binding?.localitzacio?.text = String.format(
                             "Direcció: %1\$s \n Hora: %2\$tr",
                             finalResultMessage,
                             System.currentTimeMillis()
