@@ -1,4 +1,4 @@
-package com.example.firebase.ui.home
+package com.example.firebase.ui
 
 import android.annotation.SuppressLint
 import android.app.Application
@@ -17,24 +17,26 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import java.io.IOException
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 
 class SharedViewModel(application: Application) : AndroidViewModel(application) {
     private var binding: FragmentHomeBinding? = null
     private val app: Application = application
-    val currentAddress: MutableLiveData<String> = MutableLiveData()
+    private val currentAddress: MutableLiveData<String> = MutableLiveData()
     private val checkPermission = MutableLiveData<String>()
     private val buttonText = MutableLiveData<String>()
     private val progressBar = MutableLiveData<Boolean>()
+    private var mTrackingLocation = false
+    private var mFusedLocationClient: FusedLocationProviderClient? = null
+    private var user : MutableLiveData<FirebaseUser> = MutableLiveData()
 
-    private var mTrackingLocation : Boolean = false
-    var mFusedLocationClient : FusedLocationProviderClient? = null
-
-    fun getCurrentAddress() : LiveData<String> {
-        return currentAddress;
+    fun getCurrentAddress(): LiveData<String> {
+        return currentAddress
     }
 
     fun getButtonText(): MutableLiveData<String> {
@@ -49,26 +51,22 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         this.mFusedLocationClient = mFusedLocationClient
     }
 
-    fun getCheckPermission(): LiveData<String>{
+    fun getCheckPermission(): LiveData<String> {
         return checkPermission
     }
 
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            if (locationResult != null) {
-                fetchAddress(locationResult.lastLocation)
-            }
+            locationResult.lastLocation?.let { fetchAddress(it) }
         }
     }
 
-    val locationRequest: LocationRequest
-        get() {
-            val locationRequest: LocationRequest = LocationRequest()
-            locationRequest.setInterval(10000)
-            locationRequest.setFastestInterval(5000)
-            locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-            return locationRequest
-        }
+    private fun getLocationRequest(): LocationRequest {
+        return LocationRequest.Builder(PRIORITY_HIGH_ACCURACY, 10000L)
+            .setMinUpdateIntervalMillis(5000L)
+            .build()
+    }
+
 
     fun switchTrackingLocation() {
         if (!mTrackingLocation) {
@@ -79,73 +77,53 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun stopTrackingLocation() {
-        if (mTrackingLocation!!) {
+        if (mTrackingLocation) {
             mFusedLocationClient?.removeLocationUpdates(mLocationCallback)
             mTrackingLocation = false
             progressBar.postValue(false)
-            buttonText.setValue("Comença a seguir la ubicació")
+            buttonText.value = "Comença a seguir la ubicació"
         }
     }
 
     @SuppressLint("MissingPermission")
     fun startTrackingLocation(needsChecking: Boolean) {
         if (needsChecking) {
-            checkPermission.postValue("check");
+            checkPermission.postValue("check")
         } else {
             mFusedLocationClient?.requestLocationUpdates(
-                locationRequest,
-                mLocationCallback, null
-            );
+                getLocationRequest(),
+                mLocationCallback,
+                Looper.getMainLooper()
+            )
 
-            currentAddress.postValue("Carregant...");
+            currentAddress.postValue("Carregant...")
 
-            progressBar.postValue(true);
-            mTrackingLocation = true;
-            buttonText.setValue("Aturar el seguiment de la ubicació");
+            progressBar.postValue(true)
+            mTrackingLocation = true
+            buttonText.setValue("Aturar el seguiment de la ubicació")
         }
     }
 
 
-    private fun fetchAddress(location: Location?) {
-        val executor = Executors.newSingleThreadExecutor()
+    private fun fetchAddress(location: Location) {
+        val executor: ExecutorService = Executors.newSingleThreadExecutor()
         val handler = Handler(Looper.getMainLooper())
-
         val geocoder = Geocoder(app.applicationContext, Locale.getDefault())
 
         executor.execute {
-            var addresses: List<Address>? = null
             var resultMessage = ""
             try {
-                addresses = geocoder.getFromLocation(
-                    location?.latitude!!,
-                    location?.longitude!!,
-                    1
-                )
-
-
-                if (addresses == null || addresses.size == 0) {
-                    if (resultMessage.isEmpty()) {
-                        resultMessage = "No s'ha trobat cap adreça"
-                        Log.e("INCIVISME", resultMessage)
-                    }
-                } else {
+                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                if (addresses.isNullOrEmpty()){
+                    resultMessage = "NO se ha trobat la adreça"
+                    Log.e("INCISIVE", resultMessage)
+                } else{
                     val address = addresses[0]
-                    val addressParts =
-                        ArrayList<String?>()
-
+                    val addressParts = mutableListOf<String>()
                     for (i in 0..address.maxAddressLineIndex) {
                         addressParts.add(address.getAddressLine(i))
                     }
-
                     resultMessage = TextUtils.join("\n", addressParts)
-                    val finalResultMessage = resultMessage
-                    handler.post {
-                        if (mTrackingLocation) binding?.localitzacio?.text = String.format(
-                            "Direcció: %1\$s \n Hora: %2\$tr",
-                            finalResultMessage,
-                            System.currentTimeMillis()
-                        )
-                    }
                 }
             } catch (ioException: IOException) {
                 resultMessage = "Servei no disponible"
@@ -154,10 +132,26 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
                 resultMessage = "Coordenades no vàlides"
                 Log.e(
                     "INCIVISME",
-                    resultMessage + ". " + "Latitude = " + location!!.latitude + ", Longitude = " + location.longitude,
+                    resultMessage + ". " + "Latitude = " + location.latitude + ", Longitude = " + location.longitude,
                     illegalArgumentException
                 )
             }
+
+            val finalResultMessage = resultMessage
+            handler.post {
+                if (mTrackingLocation) {
+                    currentAddress.postValue("Direcci: $finalResultMessage")
+                }
+            }
         }
     }
+    fun getUser(): LiveData<FirebaseUser> {
+        return user
+    }
+
+    fun setUser(passedUser : FirebaseUser){
+        user.postValue(passedUser)
+    }
 }
+
+
