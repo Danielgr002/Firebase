@@ -1,23 +1,27 @@
 package com.example.firebase.ui
 
 import android.annotation.SuppressLint
+import android.app.Activity.RESULT_OK
 import android.app.Application
-import android.location.Address
+import android.content.Intent
 import android.location.Geocoder
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.firebase.databinding.FragmentHomeBinding
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
+import com.google.firebase.auth.FirebaseUser
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -34,6 +38,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     private var mTrackingLocation = false
     private var mFusedLocationClient: FusedLocationProviderClient? = null
     private var user : MutableLiveData<FirebaseUser> = MutableLiveData()
+    private var signInLauncher : ActivityResultLauncher<Intent>? = null
 
     fun getCurrentAddress(): LiveData<String> {
         return currentAddress
@@ -145,6 +150,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
     }
+
     fun getUser(): LiveData<FirebaseUser> {
         return user
     }

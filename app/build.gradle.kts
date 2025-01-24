@@ -53,4 +53,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation (libs.play.services.location)
     implementation (libs.play.services.maps)
+    implementation(libs.firebase.auth)
+    implementation (libs.firebase.database)
+    implementation (libs.firebase.ui.auth)
+    implementation (libs.firebase.ui.database)
+    implementation (libs.glide)
+    annotationProcessor (libs.glide.compiler)
 }

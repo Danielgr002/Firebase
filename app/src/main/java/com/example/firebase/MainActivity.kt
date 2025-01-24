@@ -1,5 +1,6 @@
 package com.example.firebase
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -15,6 +16,7 @@ import androidx.navigation.ui.NavigationUI.setupActionBarWithNavController
 import androidx.navigation.ui.NavigationUI.setupWithNavController
 import com.example.firebase.databinding.ActivityMainBinding
 import com.example.firebase.ui.SharedViewModel
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.android.gms.location.LocationServices
 
 
@@ -23,8 +25,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var locationPermissionRequest: ActivityResultLauncher<Array<String>>? = null
     private var sharedViewModel : SharedViewModel? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    private var signInLauncher: ActivityResultLauncher<Intent>? = null
+     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -32,6 +34,9 @@ class MainActivity : AppCompatActivity() {
 
         //val navView : BottomNavigationView = findViewById(R.id.nav_view)
 
+        signInLauncher = registerForActivityResult(
+            FirebaseAuthUIActivityResultContract(),
+        )
         val appBarConfiguration: AppBarConfiguration = AppBarConfiguration.Builder(
             R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
         )
