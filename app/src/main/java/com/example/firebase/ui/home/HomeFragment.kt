@@ -40,11 +40,14 @@ class HomeFragment : Fragment() {
         sharedViewModel.getCurrentAddress().observe(
             viewLifecycleOwner,
             Observer<String> { address: String? ->
-                binding!!.localitzacio.text = String.format(
+                binding!!.txtDireccio.setText (String.format(
                     "Direcció: %1\$s \n Hora: %2\$tr",
                     address, System.currentTimeMillis()
                 )
-            })
+                )
+            }
+        )
+
         sharedViewModel.getButtonText().observe(viewLifecycleOwner) { s ->
             binding!!.buttonLocation.setText(s
             )

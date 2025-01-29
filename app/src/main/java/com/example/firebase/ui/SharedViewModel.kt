@@ -1,7 +1,6 @@
 package com.example.firebase.ui
 
 import android.annotation.SuppressLint
-import android.app.Activity.RESULT_OK
 import android.app.Application
 import android.content.Intent
 import android.location.Geocoder
@@ -15,12 +14,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.firebase.databinding.FragmentHomeBinding
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseUser
 import java.io.IOException
 import java.util.Locale
@@ -39,6 +38,11 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     private var mFusedLocationClient: FusedLocationProviderClient? = null
     private var user : MutableLiveData<FirebaseUser> = MutableLiveData()
     private var signInLauncher : ActivityResultLauncher<Intent>? = null
+    private val currentLatLng = MutableLiveData<LatLng>()
+
+    fun getCurrentLatLng(): MutableLiveData<LatLng>  {
+        return currentLatLng;
+    }
 
     fun getCurrentAddress(): LiveData<String> {
         return currentAddress
@@ -118,6 +122,8 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         executor.execute {
             var resultMessage = ""
             try {
+                var latlng: LatLng = LatLng(location.latitude, location.longitude)
+                currentLatLng.postValue(latlng)
                 val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                 if (addresses.isNullOrEmpty()){
                     resultMessage = "NO se ha trobat la adreça"

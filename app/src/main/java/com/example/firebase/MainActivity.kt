@@ -16,8 +16,15 @@ import androidx.navigation.ui.NavigationUI.setupActionBarWithNavController
 import androidx.navigation.ui.NavigationUI.setupWithNavController
 import com.example.firebase.databinding.ActivityMainBinding
 import com.example.firebase.ui.SharedViewModel
+import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.AuthUI.IdpConfig.EmailBuilder
+import com.firebase.ui.auth.AuthUI.IdpConfig.GoogleBuilder
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import java.util.Arrays
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,9 +42,15 @@ class MainActivity : AppCompatActivity() {
         //val navView : BottomNavigationView = findViewById(R.id.nav_view)
 
         signInLauncher = registerForActivityResult(
-            FirebaseAuthUIActivityResultContract(),
-        )
-        val appBarConfiguration: AppBarConfiguration = AppBarConfiguration.Builder(
+            FirebaseAuthUIActivityResultContract()
+        ) { result ->
+            if (result.getResultCode() == RESULT_OK) {
+                val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+                sharedViewModel?.setUser(user as FirebaseUser)
+            }
+        }
+
+         val appBarConfiguration: AppBarConfiguration = AppBarConfiguration.Builder(
             R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
         )
             .build()
@@ -96,6 +109,29 @@ class MainActivity : AppCompatActivity() {
             )
         } else {
             sharedViewModel!!.startTrackingLocation(false)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        FirebaseApp.initializeApp(this)
+        val auth = FirebaseAuth.getInstance()
+        Log.e("XXXX", auth.currentUser.toString())
+        if (auth.currentUser == null) {
+            val signInIntent =
+                AuthUI.getInstance()
+                    .createSignInIntentBuilder()
+                    .setIsSmartLockEnabled(false)
+                    .setAvailableProviders(
+                        Arrays.asList(
+                            EmailBuilder().build(),
+                            GoogleBuilder().build()
+                        )
+                    )
+                    .build()
+            signInLauncher!!.launch(signInIntent)
+        } else {
+            sharedViewModel!!.setUser(auth.currentUser!!)
         }
     }
 }

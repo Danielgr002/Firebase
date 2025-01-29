@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "182256005714",
+    "project_id": "incisive-98dc8",
+    "storage_bucket": "incisive-98dc8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182256005714:android:b97aa59a56ce9b5467658b",
+        "android_client_info": {
+          "package_name": "com.example.firebase"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "182256005714-bc675jkf8rv3d6bvv9fk249krva549cf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoN7Vctn4V_5-eeAGF-3vBUefzfRBMrUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "182256005714-bc675jkf8rv3d6bvv9fk249krva549cf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
