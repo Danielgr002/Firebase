@@ -11,9 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.firebase.databinding.FragmentHomeBinding
+import com.example.firebase.ui.Incidencia
 import com.example.firebase.ui.SharedViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
 
 class HomeFragment : Fragment() {
@@ -22,6 +26,7 @@ class HomeFragment : Fragment() {
     private var mFusedLocationClient: FusedLocationProviderClient? = null
     private var mTrackingLocation = false
     private var mLocationCallback: LocationCallback? = null
+    private var authUser : FirebaseUser? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,12 +46,17 @@ class HomeFragment : Fragment() {
             viewLifecycleOwner,
             Observer<String> { address: String? ->
                 binding!!.txtDireccio.setText (String.format(
-                    "Direcció: %1\$s \n Hora: %2\$tr",
+                    "Dirección: %1\$s \n Hora: %2\$tr",
                     address, System.currentTimeMillis()
                 )
                 )
             }
         )
+
+        sharedViewModel.getCurrentLatLng().observe(viewLifecycleOwner, {latlng ->
+            binding!!.txtLatitud.setText(String.format(latlng.latitude.toString()))
+            binding!!.txtLongitud.setText(String.format(latlng.longitude.toString()))
+        })
 
         sharedViewModel.getButtonText().observe(viewLifecycleOwner) { s ->
             binding!!.buttonLocation.setText(s
@@ -57,11 +67,27 @@ class HomeFragment : Fragment() {
             else binding!!.loading.visibility = ProgressBar.INVISIBLE
         }
 
+        sharedViewModel.getUser().observe(viewLifecycleOwner, { user ->
+            authUser = user
+        })
 
         binding!!.buttonLocation.setOnClickListener { view ->
             Log.d("DEBUG", "Clicked Get Location")
             sharedViewModel.switchTrackingLocation();
         }
+
+        binding!!.buttonNotificar.setOnClickListener({ button ->
+            var incidencia : Incidencia? = null
+            incidencia?.direccio.toString()
+            incidencia?.latitud.toString()
+            incidencia?.longitud.toString()
+            incidencia?.problema.toString()
+
+            var base: DatabaseReference = FirebaseDatabase.getInstance().getReference()
+
+            var users : DatabaseReference = base.child("users")
+            var uid : DatabaseReference = users.child()
+        })
 
         return root
     }
